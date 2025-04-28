@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -11,9 +12,10 @@ func main() {
 	// Setup
 	repo := tm.NewInMemoryRepo()
 	manager := tm.NewTaskManager(repo)
+	ctx := context.Background()
 
 	// Create bound task functions
-	sendEmail := tm.EmailTasks{SendEmail: tm.CreateTask(manager, tm.SendEmail, tm.TasksOptions{
+	sendEmail := tm.EmailTasks{SendEmail: tm.CreateTask(ctx, manager, tm.SendEmail, tm.TasksOptions{
 		Retries: 2,
 		Timeout: 5 * time.Second,
 	})}

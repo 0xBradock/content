@@ -17,6 +17,7 @@ type TaskLauncher[P any] func(P) (string, error)
 // TaskStatus holds the different types of status a task can be
 type TaskStatus string
 
+// Task statuses
 const (
 	TaskPending  TaskStatus = "pending"
 	TaskRunning  TaskStatus = "running"
@@ -27,12 +28,25 @@ const (
 
 // TaskRecord holds the status for each task in the task manager and repo.
 type TaskRecord struct {
-	ID        string
-	Status    TaskStatus
+	// ID is the task unique id.
+
+	// Status is the status the task is in.
+	ID string
+
+	// Status is the status the task is in.
+	Status TaskStatus
+
+	// CreatedAt is the time the task was created.
 	CreatedAt time.Time
+
+	// UpdatedAt is the time the task was last updated.
 	UpdatedAt time.Time
-	Result    any
-	Error     string
+
+	// Result...
+	Result any
+
+	// Error stores the error associated with the task.
+	Error string
 }
 
 // TaksOptions holds the option for each task
@@ -55,6 +69,7 @@ type TaskManager struct {
 	repo  TaskRepository
 }
 
+// NewTaskManager returns the main task manager with its repository.
 func NewTaskManager(repo TaskRepository) *TaskManager {
 	return &TaskManager{
 		repo:  repo,
@@ -62,6 +77,8 @@ func NewTaskManager(repo TaskRepository) *TaskManager {
 	}
 }
 
+// RunTask is the main executor of a task.
+// It calls the task in a goroutine and is able to control retries and cancelation.
 func (tm *TaskManager) RunTask(
 	ctx context.Context,
 	id string,
@@ -99,6 +116,9 @@ func (tm *TaskManager) RunTask(
 		for attempt := 0; attempt <= int(opts.Retries); attempt++ {
 			select {
 			case <-ctx.Done():
+				// TODO: This should be able to cancel the task mid flight.
+				// It requires sending a cancel message to the task and getting the answer back.
+				// tm.updateStatus(id, TaskCanceled)
 				return
 				// TODO: This will call the function many times without waiting.
 				// There should be a ticker to wait for and it should come from a param.
@@ -110,7 +130,7 @@ func (tm *TaskManager) RunTask(
 					return
 				}
 			}
-			// FIX: Remove this when the backoff ticker is implemented
+			// TODO: Remove this when the backoff ticker is implemented
 			time.Sleep(1 * time.Second)
 		}
 
@@ -120,6 +140,7 @@ func (tm *TaskManager) RunTask(
 	return nil
 }
 
+// updateResult updates the result of a given task id.
 func (tm *TaskManager) updateResult(id string, result any) {
 	tm.repo.Upgrade(TaskRecord{
 		ID:        id,
@@ -129,6 +150,7 @@ func (tm *TaskManager) updateResult(id string, result any) {
 	})
 }
 
+// updateError updates the error of a given task id.
 func (tm *TaskManager) updateError(id string, err error) {
 	tm.repo.Upgrade(TaskRecord{
 		ID:        id,
@@ -138,6 +160,7 @@ func (tm *TaskManager) updateError(id string, err error) {
 	})
 }
 
+// updateStatus updates the status of a given task id.
 func (tm *TaskManager) updateStatus(id string, status TaskStatus) {
 	tm.repo.Upgrade(TaskRecord{
 		ID:        id,
@@ -146,31 +169,29 @@ func (tm *TaskManager) updateStatus(id string, status TaskStatus) {
 	})
 }
 
-func SubmitTask[P any, R any](tm *TaskManager, fn TaskFunc[P, R], params P, opts TasksOptions) (string, error) {
-	uuid, err := uuid.NewV7()
-	if err != nil {
-		return "", err
-	}
-	id := uuid.String()
-
-	runner := func(ctx context.Context) (any, error) {
-		return fn(ctx, params)
-	}
-
-	err = tm.RunTask(context.Background(), id, runner, opts)
-	if err != nil {
-		return "", err
-	}
-
-	return id, nil
-}
-
+// CreateTask wraps a given task with SubmitTask.
 func CreateTask[P any, R any](
+	ctx context.Context,
 	tm *TaskManager,
 	fn TaskFunc[P, R],
 	opts TasksOptions,
 ) func(params P) (string, error) {
 	return func(params P) (string, error) {
-		return SubmitTask(tm, fn, params, opts)
+		uuid, err := uuid.NewV7()
+		if err != nil {
+			return "", err
+		}
+		id := uuid.String()
+
+		run := func(ctx context.Context) (any, error) {
+			return fn(ctx, params)
+		}
+
+		err = tm.RunTask(ctx, id, run, opts)
+		if err != nil {
+			return "", err
+		}
+
+		return id, nil
 	}
 }
