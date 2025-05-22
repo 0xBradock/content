@@ -1,0 +1,23 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "HST2S7622FVP63VS",
+        "HostId": "RtIrgv6qeCk/g9ml8Dr/d1puePRyNB19vmbWtVX+vQGawRV2AbD+RWms0XAtw88lRg186RX0WYW+xHgtsp7JIg==",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "x-amz-id-2": "RtIrgv6qeCk/g9ml8Dr/d1puePRyNB19vmbWtVX+vQGawRV2AbD+RWms0XAtw88lRg186RX0WYW+xHgtsp7JIg==",
+            "x-amz-request-id": "HST2S7622FVP63VS",
+            "date": "Sun, 18 May 2025 17:29:53 GMT",
+            "x-amz-server-side-encryption": "AES256",
+            "etag": "f6cae9529f28a6529502af76b0dbc882",
+            "x-amz-checksum-crc32": "uZdj9Q==",
+            "x-amz-checksum-type": "FULL_OBJECT",
+            "content-length": "0",
+            "server": "AmazonS3"
+        },
+        "RetryAttempts": 1
+    },
+    "ETag": "f6cae9529f28a6529502af76b0dbc882",
+    "ChecksumCRC32": "uZdj9Q==",
+    "ChecksumType": "FULL_OBJECT",
+    "ServerSideEncryption": "AES256"
+}
